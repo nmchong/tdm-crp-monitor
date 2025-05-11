@@ -1,0 +1,41 @@
+name: CRP Monitor
+
+on:
+  # Run every hour
+  schedule:
+    - cron: '0 * * * *'
+  # Also allow manual trigger
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+
+      - name: Install dependencies
+        run: pip install requests beautifulsoup4 lxml
+
+      - name: Run monitor script
+        env:
+          SMTP_SERVER:    ${{ secrets.SMTP_SERVER }}
+          SMTP_PORT:      ${{ secrets.SMTP_PORT }}
+          EMAIL_ADDRESS:  ${{ secrets.EMAIL_ADDRESS }}
+          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+          EMAIL_TO:       ${{ secrets.EMAIL_TO }}
+        run: python monitor_crp.py
+
+      - name: Commit CSV if updated
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git diff --quiet || (
+            git add seen_projects.csv &&
+            git commit -m "📈 Update seen_projects.csv" &&
+            git push
+          )

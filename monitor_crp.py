@@ -40,7 +40,7 @@ def send_email(new_rows):
     subject = f"{count} new tdm crp projs"
 
     lines = [
-        "new crp projs, 2025-26",
+        "new data mine corporate partners projs, 2025-26",
         ""
     ]
     for r in new_rows:

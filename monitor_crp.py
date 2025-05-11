@@ -5,36 +5,53 @@ from bs4 import BeautifulSoup
 import smtplib
 from email.mime.text import MIMEText
 
-CRP_URL        = "https://crp.the-examples-book.com/"
-CSV_FILE       = "seen_projects.csv"
+CRP_URL   = "https://crp.the-examples-book.com/"
+CSV_FILE  = "seen_projects.csv"
 
 SMTP_SERVER    = os.getenv("SMTP_SERVER")
-SMTP_PORT      = int(os.getenv("SMTP_PORT", "587"))
+SMTP_PORT      = int(os.getenv("SMTP_PORT", 587))
 EMAIL_ADDRESS  = os.getenv("EMAIL_ADDRESS")
 EMAIL_PASSWORD = os.getenv("EMAIL_PASSWORD")
 EMAIL_TO       = os.getenv("EMAIL_TO")
 
-def load_seen_urls():
+def load_seen_names():
     if not os.path.exists(CSV_FILE):
         return set()
     with open(CSV_FILE, newline="", encoding="utf-8") as f:
-        return {row["url"] for row in csv.DictReader(f)}
+        return {row["project_name"] for row in csv.DictReader(f)}
 
 def save_new_rows(rows):
     write_header = not os.path.exists(CSV_FILE)
     with open(CSV_FILE, "a", newline="", encoding="utf-8") as f:
-        writer = csv.DictWriter(f, fieldnames=["url","location","partnership","project_name"])
+        fieldnames = ["partnership", "project_name", "semester", "location"]
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
         if write_header:
             writer.writeheader()
-        writer.writerows(rows)
+        for r in rows:
+            writer.writerow({
+                "partnership":   r["partnership"],
+                "project_name":  r["project_name"],
+                "semester":      r["semester"],
+                "location":      r["location"],
+            })
 
 def send_email(new_rows):
-    body = "New CRP projects for 2025-2026:\n\n" + "\n\n".join(
-        f"- {r['project_name']} ({r['location']}, {r['partnership']})\n  {r['url']}"
-        for r in new_rows
-    )
+    count = len(new_rows)
+    subject = f"{count} new tdm crp projs"
+
+    lines = [
+        "new crp projs, 2025-26",
+        ""
+    ]
+    for r in new_rows:
+        lines.append(
+            f"{r['partnership']}: {r['project_name']} "
+            f"({r['semester']}; {r['location']}) -- {r['url']}"
+        )
+
+    body = "\n".join(lines)
     msg = MIMEText(body)
-    msg["Subject"] = f"[CRP] {len(new_rows)} new 2025-2026 project(s)"
+    msg["Subject"] = subject
     msg["From"]    = EMAIL_ADDRESS
     msg["To"]      = EMAIL_TO
 
@@ -45,11 +62,13 @@ def send_email(new_rows):
         smtp.send_message(msg)
 
 def check_for_new_projects():
+    # 1) Fetch & parse
     resp = requests.get(CRP_URL)
     resp.raise_for_status()
     soup = BeautifulSoup(resp.text, "lxml")
-
     table = soup.find("table", id="projects-table")
+
+    # 2) Extract only 2025-2026 rows
     all_rows = []
     for tr in table.tbody.find_all("tr"):
         cells = tr.find_all("td")
@@ -59,20 +78,24 @@ def check_for_new_projects():
 
         location    = cells[1].get_text(strip=True)
         partnership = cells[2].get_text(strip=True)
+        semester    = cells[4].get_text(strip=True)
         link        = cells[3].find("a")
         project_name= link.get_text(strip=True)
         url         = link["href"]
 
         all_rows.append({
-            "url": url,
-            "location": location,
-            "partnership": partnership,
-            "project_name": project_name
+            "partnership":  partnership,
+            "project_name": project_name,
+            "semester":     semester,
+            "location":     location,
+            "url":          url,
         })
 
-    seen = load_seen_urls()
-    new_rows = [r for r in all_rows if r["url"] not in seen]
+    # 3) Diff against our CSV
+    seen = load_seen_names()
+    new_rows = [r for r in all_rows if r["project_name"] not in seen]
 
+    # 4) If there are any, save & email
     if new_rows:
         save_new_rows(new_rows)
         send_email(new_rows)

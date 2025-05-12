@@ -62,13 +62,13 @@ def send_email(new_rows):
         smtp.send_message(msg)
 
 def check_for_new_projects():
-    # 1) Fetch & parse
+    # fetch & parse
     resp = requests.get(CRP_URL)
     resp.raise_for_status()
     soup = BeautifulSoup(resp.text, "lxml")
     table = soup.find("table", id="projects-table")
 
-    # 2) Extract only 2025-2026 rows
+    # 2) use only "2025-2026" rows
     all_rows = []
     for tr in table.tbody.find_all("tr"):
         cells = tr.find_all("td")
@@ -91,11 +91,11 @@ def check_for_new_projects():
             "url":          url,
         })
 
-    # 3) Diff against our CSV
+    # 3) compare against current csv
     seen = load_seen_names()
     new_rows = [r for r in all_rows if r["project_name"] not in seen]
 
-    # 4) If there are any, save & email
+    # 4) save new csv & email if new rows
     if new_rows:
         save_new_rows(new_rows)
         send_email(new_rows)

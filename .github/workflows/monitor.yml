@@ -1,24 +1,25 @@
 name: CRP Monitor
 
-# 1) Give the GITHUB_TOKEN write access so we can push back.
+# give GITHUB_TOKEN write access to git push
 permissions:
   contents: write
 
 on:
   schedule:
-    - cron: '0 */2 * * *'   # every hour
-  workflow_dispatch:      # allow manual run
+    - cron: '0 */2 * * *' # runs every 2 hours
+  workflow_dispatch:
 
 jobs:
   check:
     runs-on: ubuntu-latest
 
     steps:
-      # 2) Checkout and persist the token for pushes
+      # do code checkout & automation steps
+
       - name: Check out code
         uses: actions/checkout@v3
         with:
-          persist-credentials: true  # ensures the write-token is available
+          persist-credentials: true
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -42,10 +43,10 @@ jobs:
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-          # Stage the CSV (new or changed)
+          # stage new/changed csv
           git add seen_projects.csv
 
-          # If there's anything staged, commit & push
+          # commit & push if anything staged
           if ! git diff --cached --quiet; then
             git commit -m "update seen_projects.csv"
             git push

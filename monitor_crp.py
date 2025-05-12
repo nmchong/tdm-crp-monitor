@@ -40,7 +40,7 @@ def send_email(new_rows):
     subject = f"{count} new tdm crp projs"
 
     lines = [
-        "new data mine corporate partners projs, 2025-26",
+        "new data mine corporate partners projs for 2025-26",
         ""
     ]
     for r in new_rows:
@@ -99,9 +99,9 @@ def check_for_new_projects():
     if new_rows:
         save_new_rows(new_rows)
         send_email(new_rows)
-        print(f"Found {len(new_rows)} new 2025-2026 project(s); email sent.")
+        print(f"Found {len(new_rows)} new 2025-2026 project(s), email sent")
     else:
-        print("No new 2025-2026 projects.")
+        print("No new 2025-2026 projects")
 
 if __name__ == "__main__":
     check_for_new_projects()

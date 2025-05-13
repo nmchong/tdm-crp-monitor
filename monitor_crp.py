@@ -68,7 +68,7 @@ def check_for_new_projects():
     soup = BeautifulSoup(resp.text, "lxml")
     table = soup.find("table", id="projects-table")
 
-    # 2) use only "2025-2026" rows
+    # use only "2025-2026" rows
     all_rows = []
     for tr in table.tbody.find_all("tr"):
         cells = tr.find_all("td")
@@ -91,11 +91,11 @@ def check_for_new_projects():
             "url":          url,
         })
 
-    # 3) compare against current csv
+    # compare against current csv
     seen = load_seen_names()
     new_rows = [r for r in all_rows if r["project_name"] not in seen]
 
-    # 4) save new csv & email if new rows
+    # save new csv & email if new rows
     if new_rows:
         save_new_rows(new_rows)
         send_email(new_rows)

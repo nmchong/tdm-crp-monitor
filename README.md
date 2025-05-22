@@ -11,6 +11,6 @@ Routinely scrapes Purdue's Data Mine Corporate Partners projects list to check i
 - EMAIL_ADDRESS: email address you are sending from
 - EMAIL_PASSWORD: password of above -- this is "app password" from gmail settings, not your login password
 - EMAIL_TO: email address you will send to (make sure to check spam folder)
-#### Update customization
+#### How to customize
 - Change check_for_new_projects() to change the year to scrape
 - Edit .github/workflows/monitor.yml to change cron-job frequency

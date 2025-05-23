@@ -1,7 +1,7 @@
 ### Overview
 Routinely scrapes Purdue's Data Mine Corporate Partners projects list to check if new projects are added.
 - Scrapes [https://crp.the-examples-book.com/](https://crp.the-examples-book.com/) (Purdue's Data Mine corporate partners list) for new projects
-- Uses cron jobs to run *monitor_crp.py* (scrapes the website every x amount of time)
+- Uses cron jobs to run *monitor_crp.py* (scrapes the website every x amount of time) -- automated using GitHub Actions
 - Saves projects to *seen_projects.csv* and emails if any updates
 
 ### Customization

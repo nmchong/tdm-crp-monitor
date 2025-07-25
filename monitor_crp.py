@@ -25,14 +25,12 @@ def load_seen_names():
         return {row["project_name"] for row in csv.DictReader(file)}
 
 
-# save new projects to csv
-def save_new_rows(rows):
-    write_header = not os.path.exists(CSV_FILE)
-    with open(CSV_FILE, "a", newline="", encoding="utf-8") as file:
+# save new projects to csv (overwrite with current list)
+def save_all_rows(rows):
+    with open(CSV_FILE, "w", newline="", encoding="utf-8") as file:
         fieldnames = ["partnership", "project_name", "semester", "location"]
         writer = csv.DictWriter(file, fieldnames=fieldnames)
-        if write_header:
-            writer.writeheader()
+        writer.writeheader()
         for row in rows:
             writer.writerow({
                 "partnership": row["partnership"],
@@ -87,6 +85,8 @@ def check_for_new_projects():
             continue
 
         location = cells[1].get_text(strip=True)
+        if location != "West Lafayette, IN":
+            continue
         partnership = cells[2].get_text(strip=True)
         semester = cells[4].get_text(strip=True)
         link = cells[3].find("a")
@@ -105,9 +105,11 @@ def check_for_new_projects():
     seen = load_seen_names()
     new_rows = [row for row in all_rows if row["project_name"] not in seen]
 
-    # save new csv & email if new rows
+    # always update csv to current list (silent delete)
+    save_all_rows(all_rows)
+
+    # email if new rows
     if new_rows:
-        save_new_rows(new_rows)
         send_email(new_rows)
         print(f"Found {len(new_rows)} new 2025-2026 project(s), email sent")
     else:

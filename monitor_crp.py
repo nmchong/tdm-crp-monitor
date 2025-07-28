@@ -74,29 +74,14 @@ def send_email(new_rows):
 def check_for_new_projects():
     try:
         # fetch & parse
-        print(f"Fetching data from {CRP_URL}...")
         response = requests.get(CRP_URL)
-        print(f"Response status: {response.status_code}")
-        
+
         if response.status_code != 200:
-            print(f"Error: HTTP {response.status_code}")
-            print(f"Response content: {response.text[:500]}...")
             return
             
         response.raise_for_status()
         soup = BeautifulSoup(response.text, "lxml")
         table = soup.find("table", id="projects-table")
-        
-        if not table:
-            print("Error: Could not find table with id 'projects-table'")
-            print(f"Page content preview: {response.text[:1000]}...")
-            return
-            
-        if not table.tbody:
-            print("Error: Could not find tbody in table")
-            return
-            
-        print(f"Found table with {len(table.tbody.find_all('tr'))} rows")
         
         # use only "2025-2026" rows
         all_rows = []
@@ -105,8 +90,8 @@ def check_for_new_projects():
         
         for tr in table.tbody.find_all("tr"):
             cells = tr.find_all("td")
+            # skip rows w/ insufficient cells
             if len(cells) < 5:
-                print(f"Skipping row with insufficient cells: {len(cells)}")
                 continue
                 
             year = cells[0].get_text(strip=True)
@@ -121,8 +106,8 @@ def check_for_new_projects():
             partnership = cells[2].get_text(strip=True)
             semester = cells[4].get_text(strip=True)
             link = cells[3].find("a")
+
             if not link:
-                print(f"No link found in row: {cells[3]}")
                 continue
             project_name= link.get_text(strip=True)
             url = link["href"]
@@ -134,9 +119,6 @@ def check_for_new_projects():
                 "location": location,
                 "url": url,
             })
-            
-        print(f"Available locations for 2025-2026: {sorted(available_locations)}")
-        print(f"Found {len(west_lafayette_rows)} West Lafayette projects for 2025-2026")
         
         all_rows = west_lafayette_rows
 
@@ -152,18 +134,18 @@ def check_for_new_projects():
             if all([SMTP_SERVER, EMAIL_ADDRESS, EMAIL_PASSWORD, EMAIL_TO]):
                 try:
                     send_email(new_rows)
-                    print(f"Found {len(new_rows)} new 2025-2026 project(s), email sent")
+                    print(f"email sent with {len(new_rows)} new projs")
                 except Exception as e:
-                    print(f"Found {len(new_rows)} new 2025-2026 project(s), saved to CSV but email failed: {e}")
+                    print(f"found {len(new_rows)} new projs but email failed: {e}")
             else:
-                print(f"Found {len(new_rows)} new 2025-2026 project(s), saved to CSV (email not configured)")
+                print(f"found {len(new_rows)} new projs, saved to csv but email failed (not configured)")
         else:
             print("No new 2025-2026 projects")
             
     except requests.exceptions.RequestException as e:
-        print(f"Network error: {e}")
+        print(f"network error: {e}")
     except Exception as e:
-        print(f"Unexpected error: {e}")
+        print(f"unexpected error: {e}")
         import traceback
         traceback.print_exc()
 
